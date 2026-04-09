@@ -14,7 +14,9 @@
       "Bash(grep -E \"\\\\.csv$\")",
       "Bash(python -c \"import config; config.EXPERIMENT_MODE='basic'; exec\\(open\\('main_experiment.py'\\).read\\(\\)\\)\")",
       "Bash(python -c \"import config; config.EXPERIMENT_MODE='batch'; exec\\(open\\('main_experiment.py'\\).read\\(\\)\\)\")",
-      "Bash(python -c \"import config; print\\('Config loaded successfully'\\); print\\('Base params:', config.BASE_PARAMS\\); print\\('Experiment mode:', config.EXPERIMENT_MODE\\); print\\('Selected param:', config.selected_parameter\\)\")"
+      "Bash(python -c \"import config; print\\('Config loaded successfully'\\); print\\('Base params:', config.BASE_PARAMS\\); print\\('Experiment mode:', config.EXPERIMENT_MODE\\); print\\('Selected param:', config.selected_parameter\\)\")",
+      "Bash(rm -f experiment_results/GA_results_num_UEs.csv)",
+      "Bash(python main_experiment.py --var num_UEs --quiet)"
     ]
   }
 }
