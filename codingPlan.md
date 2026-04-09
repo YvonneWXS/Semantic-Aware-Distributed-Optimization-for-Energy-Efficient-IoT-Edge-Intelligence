@@ -18,12 +18,12 @@
 
 ## 2. 代码修改
 
-- [ ] GA
+- [x] GA
 - [ ] SA-GA
 - [ ] IPPO
 - [ ] SA-IPPO
 - [ ] SA-MAPPO
-- [ ] Greedy
+- [x] Greedy
 - [ ] ALE(All-Local-Execution)
 - [ ] ROE(Random-Execution)
 
