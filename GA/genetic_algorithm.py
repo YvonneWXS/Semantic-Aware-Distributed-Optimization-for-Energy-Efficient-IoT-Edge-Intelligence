@@ -1,12 +1,11 @@
 import numpy as np
 import random
 import csv
-import os
 from env import ENV
 
-semantic_factor_set = np.round(np.linspace(0.5, 1.0, 6), 1)  # 从0.5开始，6个值
+semantic_factor_set = np.round(np.linspace(0.3, 1.0, 8), 1)
 resource_allocation_set = np.round(np.linspace(0.1, 1.0, 10), 1)
-transmission_power_set = np.round(np.linspace(0.1, 0.5, 5), 1)  # 传输功率范围[0.1, 0.5]W，5个离散值
+transmission_power_set = np.round(np.linspace(0.1, 0.5, 5), 1)
 
 def initialize_population(pop_size, K, env, observation, max_attempts=100):
     population = []
@@ -94,7 +93,7 @@ def mutation(individual, env, observation, mutation_rate=0.9, min_resource=1e-6,
 
     return individual
 
-def genetic_algorithm(env, observation, data_size_kb, pop_size=100, generations=10000, early_stop_threshold=0.01, patience=2000, output_dir="."):
+def genetic_algorithm(env, observation, a, pop_size=100, generations=10000, early_stop_threshold=0.01, patience=2000):
     population = initialize_population(pop_size, env.UEs, env, observation)
     best_solution = None
     best_fitness = float('-inf')
@@ -136,10 +135,7 @@ def genetic_algorithm(env, observation, data_size_kb, pop_size=100, generations=
     total_energy = -best_fitness
     print(f'Optimal Solution Found with Total Energy: {total_energy}')
 
-    # 确保输出目录存在
-    os.makedirs(output_dir, exist_ok=True)
-
-    csv_filename = os.path.join(output_dir, f"GA_energy_log_{data_size_kb}KB.csv")
+    csv_filename = f"GA_energy_log_{a}.csv"
     with open(csv_filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Generation", "Best Energy"])
@@ -151,10 +147,9 @@ def genetic_algorithm(env, observation, data_size_kb, pop_size=100, generations=
     return best_solution, best_energy_per_generation
 
 if __name__ == '__main__':
-    # 测试用的小规模运行
-    env = ENV(UEs=20, MECs=1, k=100)
-    data_size_kb = 1000  # 测试用
-    observation = env.reset(data_size_kb)
-    best_solution, energy_history = genetic_algorithm(env, observation, data_size_kb)
-    final_energy, final_penalty = env.compute_energy_and_delay(*best_solution, observation)
-    assert final_penalty == 0, f"Final solution violates delay constraint! Penalty: {final_penalty}"
+    for a in range(1, 9, 1):
+        env = ENV(UEs=5, MECs=1, k=100)
+        observation = env.reset(a)
+        best_solution, energy_history = genetic_algorithm(env, observation, a)
+        final_energy, final_penalty = env.compute_energy_and_delay(*best_solution, observation)
+        assert final_penalty == 0, f"Final solution violates delay constraint! Penalty: {final_penalty}"

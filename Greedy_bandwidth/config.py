@@ -33,12 +33,12 @@ slot_duration = 1                                          # 时隙长度 (s)
 
 # 实验控制参数
 num_runs_per_config = 10                                   # 每个配置的运行次数（用于平均）
-selected_parameter = 'num_UEs'                             # 选择要测试的参数: 'num_UEs', 'DataSize', 'bandwidth', 'mec_capacity', 'min_semantic_factor'
+selected_parameter = 'DataSize'                             # 选择要测试的参数: 'num_UEs', 'DataSize', 'bandwidth', 'mec_capacity', 'min_semantic_factor'
 
 # 基础参数设置 - 当selected_parameter不在列表中时使用的固定值
 BASE_VALUES = {
     'DataSize': 150,                # 当测试其他参数时，数据大小的默认值 (KB)
-    'num_UEs': 10,                  # 当测试其他参数时，UE数量的默认值
+    'num_UEs': 20,                  # 当测试其他参数时，UE数量的默认值
     'bandwidth': 1000,              # 当测试其他参数时，带宽的默认值 (kHz)
     'mec_capacity': 12.5,           # 当测试其他参数时，MEC容量的默认值 (GHz)
     'min_semantic_factor': 0.3      # 当测试其他参数时，最小语义因子的默认值

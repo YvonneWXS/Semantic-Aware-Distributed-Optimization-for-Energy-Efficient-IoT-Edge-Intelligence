@@ -15,7 +15,7 @@ class ENV():
         offload_decision = np.array([0, 1]).reshape((2, 1))  # 是否卸载
         semantic_factor = np.arange(discrete_step, 1.0 + discrete_step, discrete_step).reshape(-1, 1) # 语义提取因子--设置为7是假设离散化为7个值，0.4、0.5...
         resource_allocation = np.arange(discrete_step, 1.0 + discrete_step, discrete_step).reshape(-1, 1)  # MEC服务器分配的计算资源比例
-        semantic_threshold = 0.5  # 语义提取因子最低阈值
+        semantic_threshold = 0.3  # 语义提取因子最低阈值
 
         # 组合动作空间
         actions = []
@@ -68,9 +68,9 @@ class ENV():
         self.r = 1  #运行语义提取任务的CPU周期数的参数1...."若设为2会导致语义提取的能耗显著增大，不合适。。。"
         self.alpha = 1  #运行语义提取任务的CPU周期数的参数2
         self.beta =2 #运行语义提取任务的CPU周期数的参数3
-        self.transmission_bandwidth = 2 * self.mHz   # 传输带宽2MHz
+        self.transmission_bandwidth = 1 * self.mHz   # 传输带宽1MHz
         # self.W = self.transmission_bandwidth/self.UEs  #每个用户设备的带宽分配
-        self.transmission_power = 0.5  # 传输功率最大为0.5W，实际值在动作空间中动态选择
+        self.transmission_power = np.random.uniform(0.1, 0.5)  # 传输功率0.1W-0.5W
         self.noise_power = 10**(-20) # 噪声功率-170dBm
         #不考虑邻道干扰功率
         self.MEC_f = 20 * self.GHz  # MEC的计算能力
@@ -91,18 +91,18 @@ class ENV():
         
 
     #更改每step的状态
-    def reset(self, data_size_kb):
+    def reset(self,a):
         np.random.seed(47)
         obs = []
         servers_cap = []
         new_cap = True
         for i in range(self.UEs):
-            task_size = data_size_kb * self.KB  # 任务大小，单位为KB
+            task_size = 256*a* self.KB  # 任务大小
             computing_density = 450  # 处理任务每比特数据的成本
             local_comp = self.UE_params[i]['local_comp']
-            # local_delay = task_size * computing_density / local_comp  # 本地处理任务时间
+            local_delay = task_size * computing_density / local_comp  # 本地处理任务时间
             local_energy = self.κ * task_size * computing_density * local_comp**2
-            max_delay = 0.1  # 任务最大容忍时间固定为100ms
+            max_delay = np.random.uniform(local_delay, 2 * local_delay)  # 任务最大容忍时间随机取
             observation = np.array([task_size, computing_density, max_delay, local_energy])
             obs.append(observation)
             new_cap = False
