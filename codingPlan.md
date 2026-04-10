@@ -1,5 +1,7 @@
 # 代码修改计划
 
+> 最新修改日期：26/4/10 16/52
+
 ## 1. 基本要求
 + 添加带宽
 + 说明文档
@@ -24,6 +26,6 @@
 - [ ] SA-IPPO
 - [ ] SA-MAPPO
 - [x] Greedy
-- [ ] ALE(All-Local-Execution)
-- [ ] ROE(Random-Execution)
+- [x] ALE(All-Local-Execution)
+- [x] ROE(Random-Execution)
 
