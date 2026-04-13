@@ -67,6 +67,38 @@ class EnvCore(object):
         self.cur_agent_obs = []
         self.sub_agent_obs = []
 
+    def _allocate_bandwidth_dwdna(self, bandwidth_weights, offload_decisions):
+        """
+        DW-DNA bandwidth allocation: B_i = floor(w_i / sum(w_j) * total_bandwidth / Δb) * Δb
+        where Δb = 180 kHz (simulating 5G RB)
+        """
+        total_bandwidth = self.transmission_bandwidth  # Hz
+        rb_size = 180 * self.kHz  # 180 kHz per RB
+
+        # Calculate normalized weights (only for offloading UEs)
+        offloading_weights = [bw_weight * offload for bw_weight, offload in zip(bandwidth_weights, offload_decisions)]
+        total_weight = sum(offloading_weights)
+
+        if total_weight == 0:
+            return [0] * self.agent_num
+
+        # Allocate bandwidth with floor quantization
+        bandwidths = []
+        for weight, offload in zip(bandwidth_weights, offload_decisions):
+            if offload == 1 and weight > 0:
+                # Normalized allocation
+                normalized_share = weight / total_weight
+                ideal_bandwidth = normalized_share * total_bandwidth
+
+                # Floor quantization to RB multiples
+                num_rbs = max(0, int(ideal_bandwidth // rb_size))
+                allocated_bandwidth = num_rbs * rb_size
+            else:
+                allocated_bandwidth = 0
+            bandwidths.append(allocated_bandwidth)
+
+        return bandwidths
+
     def reset(self): # 重置初始环境
         np.random.seed(1)
         self.sub_agent_obs = []
@@ -113,9 +145,16 @@ class EnvCore(object):
             else:
                 resource_allocation_space.append(0)
                 bandwidth_weights.append(0)  # 本地执行带宽权重为0
-        
-        if offload_num > 0:
-            W = self.transmission_bandwidth/offload_num  #每个用户设备的带宽分配
+
+        # 收集卸载决策列表
+        offload_decisions = []
+        for i in range(self.agent_num):
+            action = actions[i]
+            offload_decision = np.argmax(action[:2])
+            offload_decisions.append(offload_decision)
+
+        # DW-DNA 带宽分配
+        bandwidth_allocation = self._allocate_bandwidth_dwdna(bandwidth_weights, offload_decisions)
 
         # 如果资源分配总和超过 MEC 资源限制，则归一化
         total_allocated = sum(resource_allocation_space)
@@ -142,7 +181,11 @@ class EnvCore(object):
                 transmission_power = 0 
             else:
                 RL_SEtask_energy = self.κ * self.alpha * ( self.task_size[i] ** self.r)*((semantic_factor **(-self.beta)-1)) * (self.local_comp[i]**2)
-                uplink_rate = W * math.log2 (1 + transmission_power * self.channel_gain[i] / (W * self.noise_power))
+                if bandwidth_allocation[i] > 0:
+                    # 使用分配的带宽计算香农公式
+                    uplink_rate = bandwidth_allocation[i] * math.log2(1 + self.transmission_power * self.channel_gain[i] / (bandwidth_allocation[i] * self.noise_power))
+                else:
+                    uplink_rate = 0  # 无带宽分配
                 upload_energy = transmission_power *  self.task_size[i] *semantic_factor / uplink_rate
                 # mec_energy = self.κ_mec *(resource_allocation**3) * semantic_factor *  self.task_size[i] * self.computing_density[i]/(resource_allocation)
                 RL_total_energy = RL_SEtask_energy + upload_energy # + mec_energy
@@ -201,3 +244,33 @@ class EnvCore(object):
         # writer.add_scalar('reward/average_reward', np.mean(sub_agent_reward), self.episode_count)
         #每个agent的奖励
         return [self.cur_agent_obs, cur_agent_reward, sub_agent_done, cur_agent_info]
+
+
+# 测试代码（可以放在文件末尾，用 if __name__ == "__main__": 包裹）
+if __name__ == "__main__":
+    env = EnvCore()
+    env.transmission_bandwidth = 1e6  # 1 MHz
+
+    # Test 1: Single offloading UE
+    weights = [3, 0, 0, 0, 0]
+    offloads = [1, 0, 0, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"Test 1 - Single UE: {bandwidths}")  # 应分配约1MHz
+
+    # Test 2: Equal weights
+    weights = [2, 2, 2, 0, 0]
+    offloads = [1, 1, 1, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"Test 2 - Equal weights: {bandwidths}")  # 应近似等分
+
+    # Test 3: No offloading UEs
+    weights = [0, 0, 0, 0, 0]
+    offloads = [0, 0, 0, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"Test 3 - No offloading: {bandwidths}")  # 应全为0
+
+    # Test 4: Different weights
+    weights = [3, 2, 1, 0, 0]
+    offloads = [1, 1, 1, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"Test 4 - Different weights: {bandwidths}")  # 应按权重比例分配
