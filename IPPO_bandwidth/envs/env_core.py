@@ -61,6 +61,37 @@ class EnvCore(object):
         self.cur_agent_obs = []
         self.sub_agent_obs = []
 
+    def _allocate_bandwidth_dwdna(self, bandwidth_weights, offload_decisions):
+        """
+        DW-DNA bandwidth allocation: B_i = floor(w_i / sum(w_j) * total_bandwidth / Δb) * Δb
+        where Δb = 180 kHz (simulating 5G RB)
+        """
+        total_bandwidth = self.transmission_bandwidth  # Hz
+        rb_size = 180 * self.kHz  # 180 kHz per RB
+
+        # Calculate normalized weights (only for offloading UEs)
+        offloading_weights = [bw_weight * offload for bw_weight, offload in zip(bandwidth_weights, offload_decisions)]
+        total_weight = sum(offloading_weights)
+
+        if total_weight == 0:
+            return [0] * self.agent_num
+
+        # Allocate bandwidth with floor quantization
+        bandwidths = []
+        for weight, offload in zip(bandwidth_weights, offload_decisions):
+            if offload == 1 and weight > 0:
+                # Normalized allocation
+                normalized_share = weight / total_weight
+                ideal_bandwidth = normalized_share * total_bandwidth
+
+                # Floor quantization to RB multiples
+                num_rbs = max(0, int(ideal_bandwidth // rb_size))
+                allocated_bandwidth = num_rbs * rb_size
+            else:
+                allocated_bandwidth = 0
+            bandwidths.append(allocated_bandwidth)
+
+        return bandwidths
 
     def reset(self): # 重置初始环境
         np.random.seed(1)
@@ -117,24 +148,15 @@ class EnvCore(object):
             bw_weight = np.argmax(action[20:24])  # 0,1,2,3
             bandwidth_weights.append(bw_weight)
 
-        # DW-DNA 带宽分配机制
-        # 计算总权重
-        total_weight = sum(bandwidth_weights)
-        # 分配带宽
-        allocated_bandwidths = []
-        if total_weight > 0:
-            for w in bandwidth_weights:
-                # 理想分配比例
-                ideal_ratio = w / total_weight
-                # 理想带宽
-                ideal_bandwidth = ideal_ratio * self.transmission_bandwidth
-                # 向下取整量化到RB整数倍
-                num_RBs = math.floor(ideal_bandwidth / self.RB_bandwidth)
-                allocated_bandwidth = num_RBs * self.RB_bandwidth
-                allocated_bandwidths.append(allocated_bandwidth)
-        else:
-            # 所有权重为0，所有UE带宽为0
-            allocated_bandwidths = [0.0] * self.agent_num
+        # 收集卸载决策列表
+        offload_decisions = []
+        for i in range(self.agent_num):
+            action = actions[i]
+            offload_decision = np.argmax(action[:2])
+            offload_decisions.append(offload_decision)
+
+        # DW-DNA 带宽分配
+        bandwidth_allocation = self._allocate_bandwidth_dwdna(bandwidth_weights, offload_decisions)
 
         # 如果资源分配总和超过 MEC 资源限制，则归一化
         total_allocated = sum(resource_allocation_space)
@@ -160,7 +182,7 @@ class EnvCore(object):
             # bw_weight already parsed
 
             # 分配带宽
-            W_i = allocated_bandwidths[i]
+            W_i = bandwidth_allocation[i]
 
             # 计算本地能耗
             RL_local_energy = self.κ * self.task_size[i] * self.computing_density[i] * (self.local_comp[i]**2)
@@ -251,3 +273,64 @@ class EnvCore(object):
         # writer.add_scalar('reward/average_reward', np.mean(sub_agent_reward), self.episode_count)
         #每个agent的奖励
         return [self.cur_agent_obs, cur_agent_reward, sub_agent_done, cur_agent_info]
+
+
+# 测试 DW-DNA 带宽分配逻辑
+if __name__ == "__main__":
+    print("Testing DW-DNA bandwidth allocation...")
+
+    # 创建环境实例
+    env = EnvCore()
+    env.transmission_bandwidth = 1e6  # 1 MHz
+
+    # Test 1: Single offloading UE
+    print("\nTest 1: Single offloading UE")
+    weights = [3, 0, 0, 0, 0]
+    offloads = [1, 0, 0, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"  Weights: {weights}")
+    print(f"  Offloads: {offloads}")
+    print(f"  Bandwidths: {bandwidths}")
+    print(f"  Total allocated: {sum(bandwidths)} Hz")
+
+    # Test 2: Equal weights for 3 offloading UEs
+    print("\nTest 2: Equal weights for 3 offloading UEs")
+    weights = [2, 2, 2, 0, 0]
+    offloads = [1, 1, 1, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"  Weights: {weights}")
+    print(f"  Offloads: {offloads}")
+    print(f"  Bandwidths: {bandwidths}")
+    print(f"  Total allocated: {sum(bandwidths)} Hz")
+
+    # Test 3: Different weights
+    print("\nTest 3: Different weights")
+    weights = [3, 2, 1, 0, 0]
+    offloads = [1, 1, 1, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"  Weights: {weights}")
+    print(f"  Offloads: {offloads}")
+    print(f"  Bandwidths: {bandwidths}")
+    print(f"  Total allocated: {sum(bandwidths)} Hz")
+
+    # Test 4: No offloading UEs
+    print("\nTest 4: No offloading UEs")
+    weights = [3, 2, 1, 0, 0]
+    offloads = [0, 0, 0, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"  Weights: {weights}")
+    print(f"  Offloads: {offloads}")
+    print(f"  Bandwidths: {bandwidths}")
+    print(f"  Total allocated: {sum(bandwidths)} Hz")
+
+    # Test 5: Zero weights for offloading UEs
+    print("\nTest 5: Zero weights for offloading UEs")
+    weights = [0, 0, 0, 0, 0]
+    offloads = [1, 1, 1, 0, 0]
+    bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
+    print(f"  Weights: {weights}")
+    print(f"  Offloads: {offloads}")
+    print(f"  Bandwidths: {bandwidths}")
+    print(f"  Total allocated: {sum(bandwidths)} Hz")
+
+    print("\nDW-DNA tests completed!")
