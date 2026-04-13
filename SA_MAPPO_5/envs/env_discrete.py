@@ -43,9 +43,9 @@ class DiscreteActionEnv(object):
         # 为每个维度定义 [min, max] 范围
         action_space_params = [
             [0, 1],  # offload_decision: 0 or 1
-            [0, k-3],  # semantic_factor: 0.3-1.0
-            [0, k-1],   # resource_allocation: 0.1-1.0
-            [0,k-6] # transmission_power: 0.1-0.5 (离散化为5个值, 0.1, 0.2, 0.3, 0.4, 0.5)
+            [0, k-3],  # semantic_factor: 0.3-1.0 (8 discrete values: 0.3, 0.4, ..., 1.0)
+            [0, k-1],   # resource_allocation: 0.1-1.0 (10 discrete values: 0.1, 0.2, ..., 1.0)
+            [0, 3]  # bandwidth_weight: 0, 1, 2, 3 (4 discrete values)
         ] #🌟
         self.action_space = MultiDiscrete(action_space_params)  
         # total_action_space = []
