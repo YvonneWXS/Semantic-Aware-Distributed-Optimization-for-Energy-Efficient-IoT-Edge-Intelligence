@@ -36,7 +36,7 @@ class EnvCore(object):
         self.beta =2 #运行语义提取任务的CPU周期数的参数3
         self.transmission_bandwidth = 1 * self.mHz   # 传输带宽1MHz
         # self.W = self.transmission_bandwidth/self.agent_num  #每个用户设备的带宽分配
-        # self.transmission_power = np.random.uniform(0.1, 0.5)  # 传输功率0.1W-0.5W
+        self.transmission_power = 0.2  # 传输功率固定为0.2W (不再从动作空间学习)
         self.noise_power = 10**(-20) # 噪声功率-170dBm
         #不考虑邻道干扰功率
         self.MEC_f = 20 * self.GHz  # MEC的计算能力
@@ -93,17 +93,26 @@ class EnvCore(object):
         agent_energy = []
         time_penalty_space = []
         resource_allocation_space = []
+        bandwidth_weights = []  # 存储带宽权重 (0-3)
         local_energy = []
         offload_num = 0
         for i in range(self.agent_num):
             #提取每个agent的action
             action = actions[i]
-            offload_decision = np.argmax(action[:2])  # 获取索引并计算对应的值 
+            offload_decision = np.argmax(action[:2])  # 获取索引并计算对应的值
             offload_num = offload_num + offload_decision
+
+            # Bandwidth weight extraction (positions 20-24 for values 0-3)
+            bw_weight_idx = np.argmax(action[20:24])  # 0, 1, 2, or 3
+            bw_weight = bw_weight_idx  # 0-3
+
             resource_allocation= (np.argmax(action[10:20])+1)*0.1*self.MEC_f    # 资源分配    #🌟
-            if offload_decision == 1: resource_allocation_space.append(resource_allocation)
+            if offload_decision == 1:
+                resource_allocation_space.append(resource_allocation)
+                bandwidth_weights.append(bw_weight)
             else:
                 resource_allocation_space.append(0)
+                bandwidth_weights.append(0)  # 本地执行带宽权重为0
         
         if offload_num > 0:
             W = self.transmission_bandwidth/offload_num  #每个用户设备的带宽分配
@@ -119,8 +128,8 @@ class EnvCore(object):
             action = actions[i]
             offload_decision = np.argmax(action[:2])
             semantic_factor = (np.argmax(action[2:10])+1)*0.1 + 0.3 # 语义因子   #🌟
-            power_idx = np.argmax(action[20:])  # 50个
-            transmission_power = 0.1 + power_idx * 0.1
+            # 传输功率现在是常量 self.transmission_power = 0.2W (不再从动作空间学习)
+            transmission_power = self.transmission_power
             resource_allocation= resource_allocation_space[i]
             #计算上传带宽
             RL_local_energy = self.κ * self.task_size[i] * self.computing_density[i] * (self.local_comp[i]**2)
