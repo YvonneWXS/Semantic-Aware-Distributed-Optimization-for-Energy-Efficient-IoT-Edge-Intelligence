@@ -186,10 +186,18 @@ class EnvCore(object):
                     uplink_rate = bandwidth_allocation[i] * math.log2(1 + self.transmission_power * self.channel_gain[i] / (bandwidth_allocation[i] * self.noise_power))
                 else:
                     uplink_rate = 0  # 无带宽分配
-                upload_energy = transmission_power *  self.task_size[i] *semantic_factor / uplink_rate
+                if bandwidth_allocation[i] > 0 and uplink_rate > 0:
+                    upload_energy = self.transmission_power * self.task_size[i] * semantic_factor / uplink_rate
+                else:
+                    upload_energy = 0
                 # mec_energy = self.κ_mec *(resource_allocation**3) * semantic_factor *  self.task_size[i] * self.computing_density[i]/(resource_allocation)
                 RL_total_energy = RL_SEtask_energy + upload_energy # + mec_energy
-                RL_total_delay = self.alpha * ( self.task_size[i] ** self.r)*((semantic_factor **(-1)-1)) / self.local_comp[i] + semantic_factor *  self.task_size[i]/ uplink_rate + semantic_factor *  self.task_size[i] * self.computing_density[i]/(resource_allocation)
+                if offload_decision == 1 and bandwidth_allocation[i] > 0 and uplink_rate > 0:
+                    upload_delay = semantic_factor * self.task_size[i] / uplink_rate
+                else:
+                    upload_delay = 0
+
+                RL_total_delay = self.alpha * (self.task_size[i] ** self.r) * ((semantic_factor **(-1)-1)) / self.local_comp[i] + upload_delay + semantic_factor * self.task_size[i] * self.computing_density[i] / (resource_allocation if resource_allocation > 0 else 1)
             # print("local_delay:",self.local_delay[i])
             # print(self.alpha * ( self.task_size[i] ** self.r)*((semantic_factor **(-1)-1)) / self.local_comp[i])
             # print(semantic_factor *  self.task_size[i]/ uplink_rate)
@@ -274,3 +282,76 @@ if __name__ == "__main__":
     offloads = [1, 1, 1, 0, 0]
     bandwidths = env._allocate_bandwidth_dwdna(weights, offloads)
     print(f"Test 4 - Different weights: {bandwidths}")  # 应按权重比例分配
+
+    # Test 5: Test reward calculation with dynamic bandwidth allocation
+    print("\n=== Test 5: Reward Calculation with Dynamic Bandwidth ===")
+
+    # Mock parameters for a single agent
+    task_size = 1.5 * env.MB
+    computing_density = 400
+    local_comp = 1.8 * env.GHz
+    channel_gain = 1e-3 * (1/50)**2.5  # 50m distance
+    semantic_factor = 0.6
+    bandwidth = 500e3  # 500 kHz
+
+    # Calculate uplink rate
+    if bandwidth > 0:
+        uplink_rate = bandwidth * math.log2(1 + env.transmission_power * channel_gain / (bandwidth * env.noise_power))
+    else:
+        uplink_rate = 0
+
+    print(f"Task size: {task_size/env.MB:.1f} MB")
+    print(f"Computing density: {computing_density:.0f} cycles/bit")
+    print(f"Local computation: {local_comp/env.GHz:.1f} GHz")
+    print(f"Semantic factor: {semantic_factor:.2f}")
+    print(f"Bandwidth: {bandwidth/1e3:.0f} kHz")
+    print(f"Uplink rate: {uplink_rate:.2f} bps")
+
+    # Test upload delay calculation
+    if bandwidth > 0 and uplink_rate > 0:
+        upload_delay = semantic_factor * task_size / uplink_rate
+        print(f"Upload delay: {upload_delay:.3f} s")
+    else:
+        print(f"Upload delay: 0 s (no bandwidth or zero uplink rate)")
+
+    # Test upload energy calculation
+    if bandwidth > 0 and uplink_rate > 0:
+        upload_energy = env.transmission_power * task_size * semantic_factor / uplink_rate
+        print(f"Upload energy: {upload_energy:.6f} J")
+    else:
+        print(f"Upload energy: 0 J (no bandwidth or zero uplink rate)")
+
+    # Test semantic extraction energy
+    RL_SEtask_energy = env.κ * env.alpha * (task_size ** env.r) * ((semantic_factor **(-env.beta)-1)) * (local_comp**2)
+    print(f"Semantic extraction energy: {RL_SEtask_energy:.6f} J")
+
+    # Test boundary cases
+    print("\n=== Test 6: Boundary Cases ===")
+
+    # Case 1: Zero bandwidth
+    bandwidth_zero = 0
+    uplink_rate_zero = 0
+    print(f"Case 1 - Zero bandwidth:")
+    print(f"  Bandwidth: {bandwidth_zero} Hz")
+    print(f"  Uplink rate: {uplink_rate_zero} bps")
+    print(f"  Upload delay: 0 s")
+    print(f"  Upload energy: 0 J")
+
+    # Case 2: Very small bandwidth (edge case)
+    bandwidth_small = 180e3  # 1 RB
+    if bandwidth_small > 0:
+        uplink_rate_small = bandwidth_small * math.log2(1 + env.transmission_power * channel_gain / (bandwidth_small * env.noise_power))
+    else:
+        uplink_rate_small = 0
+
+    print(f"\nCase 2 - Small bandwidth (1 RB):")
+    print(f"  Bandwidth: {bandwidth_small/1e3:.0f} kHz")
+    print(f"  Uplink rate: {uplink_rate_small:.2f} bps")
+    if bandwidth_small > 0 and uplink_rate_small > 0:
+        upload_delay_small = semantic_factor * task_size / uplink_rate_small
+        upload_energy_small = env.transmission_power * task_size * semantic_factor / uplink_rate_small
+        print(f"  Upload delay: {upload_delay_small:.3f} s")
+        print(f"  Upload energy: {upload_energy_small:.6f} J")
+    else:
+        print(f"  Upload delay: 0 s")
+        print(f"  Upload energy: 0 J")
