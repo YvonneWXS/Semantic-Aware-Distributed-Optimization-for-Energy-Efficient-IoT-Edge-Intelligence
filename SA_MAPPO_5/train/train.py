@@ -88,6 +88,12 @@ def parse_args(args, parser):
         print(f"Batch parameter - Data size list: {all_args.data_size_list}")
     if all_args.num_ues_list:
         print(f"Batch parameter - Num UEs list: {all_args.num_ues_list}")
+    if all_args.bandwidth_list:
+        print(f"Batch parameter - Bandwidth list: {all_args.bandwidth_list}")
+    if all_args.mec_capacity_list:
+        print(f"Batch parameter - MEC capacity list: {all_args.mec_capacity_list}")
+    if all_args.min_semantic_factor_list:
+        print(f"Batch parameter - Min semantic factor list: {all_args.min_semantic_factor_list}")
 
     return all_args
 
