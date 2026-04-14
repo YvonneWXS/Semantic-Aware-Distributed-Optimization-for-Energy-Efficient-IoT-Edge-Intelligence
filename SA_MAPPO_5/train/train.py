@@ -72,7 +72,22 @@ def parse_args(args, parser):
     parser.add_argument("--num_landmarks", type=int, default=3)
     parser.add_argument("--num_agents", type=int, default=5, help="number of players")#TODO
 
+    # Batch experiment parameters (passed through)
+    parser.add_argument("--data_size_list", type=float, nargs='+', default=None)
+    parser.add_argument("--num_ues_list", type=int, nargs='+', default=None)
+    parser.add_argument("--bandwidth_list", type=float, nargs='+', default=None)
+    parser.add_argument("--mec_capacity_list", type=float, nargs='+', default=None)
+    parser.add_argument("--min_semantic_factor_list", type=float, nargs='+', default=None)
+    parser.add_argument("--run_batch_experiments", action="store_true", default=False)
+    parser.add_argument("--batch_experiment_name", type=str, default="batch_study")
+
     all_args = parser.parse_known_args(args)[0]
+
+    # Pass batch parameters to environment if provided
+    if all_args.data_size_list:
+        print(f"Batch parameter - Data size list: {all_args.data_size_list}")
+    if all_args.num_ues_list:
+        print(f"Batch parameter - Num UEs list: {all_args.num_ues_list}")
 
     return all_args
 

@@ -494,4 +494,22 @@ def get_config():
         help="by default None. set the path to pretrained model.",
     )
 
+    # Batch experiment parameters
+    parser.add_argument("--data_size_list", type=float, nargs='+', default=[128, 256, 512, 1024],
+                        help="Data size list in KB for batch experiments")
+    parser.add_argument("--num_ues_list", type=int, nargs='+', default=[5, 10, 15, 20, 25, 30],
+                        help="Number of UEs list for batch experiments")
+    parser.add_argument("--bandwidth_list", type=float, nargs='+', default=[750, 1000, 1500, 2000],
+                        help="Bandwidth list in kHz for batch experiments")
+    parser.add_argument("--mec_capacity_list", type=float, nargs='+', default=[10.0, 12.5, 15.0, 17.5, 20.0],
+                        help="MEC capacity list in Gcps for batch experiments")
+    parser.add_argument("--min_semantic_factor_list", type=float, nargs='+', default=[0.2, 0.3, 0.4, 0.5],
+                        help="Minimum semantic factor list for batch experiments")
+
+    # Batch experiment control
+    parser.add_argument("--run_batch_experiments", action="store_true", default=False,
+                        help="Run batch experiments with parameter grid")
+    parser.add_argument("--batch_experiment_name", type=str, default="batch_study",
+                        help="Name for batch experiment results directory")
+
     return parser
