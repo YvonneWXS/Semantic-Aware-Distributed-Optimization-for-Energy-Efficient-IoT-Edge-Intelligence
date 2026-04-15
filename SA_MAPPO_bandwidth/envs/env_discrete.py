@@ -21,8 +21,8 @@ class DiscreteActionEnv(object):
     Wrapper for discrete action environment.
     """
 
-    def __init__(self):
-        self.env = EnvCore()
+    def __init__(self, agent_num=5):
+        self.env = EnvCore(agent_num=agent_num)
         self.num_agent = self.env.agent_num
 
         self.signal_obs_dim = self.env.obs_dim

@@ -48,7 +48,9 @@
       "Bash(python train/train.py --experiment_name=test_single --num_agents=5 --data_size=128 --bandwidth=750 --mec_capacity=10.0 --min_semantic_factor=0.2 --algorithm_name=mappo --seed=1 --cuda --n_rollout_threads=1 --num_env_steps=1000 --use_eval)",
       "Bash(python train/train.py --experiment_name=test_single --num_agents=5 --data_size=128 --bandwidth=750 --mec_capacity=10.0 --min_semantic_factor=0.2 --algorithm_name=mappo --seed=1 --cuda --n_rollout_threads=1 --num_env_steps=1000 --use_eval --share_policy False)",
       "Bash(pkill -f \"python main.py --batch\")",
-      "Bash(find results:*)"
+      "Bash(find results:*)",
+      "Bash(python train/train.py --experiment_name=test_15ue --num_agents=15 --data_size=128 --bandwidth=750 --mec_capacity=10.0 --min_semantic_factor=0.2 --algorithm_name=mappo --seed=1 --cuda --n_rollout_threads=1 --num_env_steps=100 --use_eval --share_policy False)",
+      "Bash(wmic process:*)"
     ]
   }
 }

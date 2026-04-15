@@ -6,9 +6,9 @@ class EnvCore(object):
     # 环境中的智能体
     """
 
-    def __init__(self):
+    def __init__(self, agent_num=5):
         np.random.seed(47)
-        self.agent_num = 5 # TODO 设置智能体的个数
+        self.agent_num = agent_num # TODO 设置智能体的个数
         self.obs_dim = 3  # 设置智能体的观测维度 ：task_size, computing_density, max_delay
         self.action_dim = 4  # 设置智能体的动作维度：offload_decision, semantic_factor, resource_allocation
         self.k = 100

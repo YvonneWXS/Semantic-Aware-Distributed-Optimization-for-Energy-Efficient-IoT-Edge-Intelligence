@@ -40,7 +40,7 @@ def make_train_env(all_args):
             # 任务大小
 
             from envs.env_discrete import DiscreteActionEnv
-            env = DiscreteActionEnv()
+            env = DiscreteActionEnv(agent_num=all_args.num_agents)
 
             # env.seed(all_args.seed + rank * 1000)
             return env
@@ -58,7 +58,7 @@ def make_eval_env(all_args):
 
             # env = ContinuousActionEnv()
             from envs.env_discrete import DiscreteActionEnv
-            env = DiscreteActionEnv()
+            env = DiscreteActionEnv(agent_num=all_args.num_agents)
             env.seed(all_args.seed + rank * 1000)
             return env
 
