@@ -109,6 +109,7 @@ class EnvCore(object):
             self.max_delay[i] = np.random.uniform(self.local_delay[i], 2 * self.local_delay[i])  # 任务最大容忍时间随机取
             observation = np.array([self.task_size[i], self.computing_density[i], self.max_delay[i]])
             self.sub_agent_obs.append(observation)
+        self.cur_agent_obs = self.sub_agent_obs
         return self.sub_agent_obs
 
     def step(self, actions, episode, step):
@@ -208,7 +209,7 @@ class EnvCore(object):
             agent_energy.append(RL_total_energy)
 
             #计算时间约束惩罚
-            time_penalty = -max(0,  RL_total_delay-self.max_delay[i])/ self.max_delay[i]
+            time_penalty = -max(0,  RL_total_delay-self.max_delay[i])/ max(self.max_delay[i], 1e-10)
             time_penalty_space.append(time_penalty)
 
             
@@ -244,13 +245,16 @@ class EnvCore(object):
         w = 1
     
         for i in range(self.agent_num):
-            cur_agent_reward.append(w1/w* self.agent_num /E_total + (w2/w)*total_time_penalty)#(w3/w)*resource_allocation_penalty)
+            cur_agent_reward.append(w1/w* self.agent_num / max(E_total, 1e-10) + (w2/w)*total_time_penalty)#(w3/w)*resource_allocation_penalty)
 
-        cur_agent_info=[E_total,total_time_penalty,resource_allocation_penalty]
+        cur_agent_info=[E_total, total_time_penalty, resource_allocation_penalty]
         #绘制rewards曲线
         #所有agent的平均奖励
         # writer.add_scalar('reward/average_reward', np.mean(sub_agent_reward), self.episode_count)
         #每个agent的奖励
+        # 确保观测值不为空
+        if len(self.cur_agent_obs) == 0:
+            self.cur_agent_obs = self.sub_agent_obs
         return [self.cur_agent_obs, cur_agent_reward, sub_agent_done, cur_agent_info]
 
 

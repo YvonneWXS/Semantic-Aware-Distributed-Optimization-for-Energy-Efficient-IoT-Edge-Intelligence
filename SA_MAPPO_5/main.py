@@ -30,7 +30,7 @@ def run_batch_experiments():
         "cuda": False,
         "n_training_threads": 2,
         "n_rollout_threads": 1,
-        "num_env_steps": 800000,
+        "num_env_steps": 100,
         "env_name": "MyEnv",
         "use_obs_instead_of_state": False,
         "episode_length": 50,
@@ -71,13 +71,13 @@ def run_batch_experiments():
         "num_landmarks": 3,
     }
 
-    # Parameter grid (using default values from config.py)
+    # Parameter grid (using default values from config.py) - reduced for testing
     param_grid = {
-        "data_size": [128, 256, 512, 1024],  # KB
-        "num_ues": [5, 10, 15, 20, 25, 30],
-        "bandwidth": [750, 1000, 1500, 2000],  # kHz
-        "mec_capacity": [10.0, 12.5, 15.0, 17.5, 20.0],  # Gcps
-        "min_semantic_factor": [0.2, 0.3, 0.4, 0.5],
+        "data_size": [128, 1024],  # KB
+        "num_ues": [5, 15],
+        "bandwidth": [750, 1500],  # kHz
+        "mec_capacity": [10.0, 15.0],  # Gcps
+        "min_semantic_factor": [0.2, 0.4],
     }
 
     # Create results directory
@@ -201,13 +201,13 @@ def run_batch_experiments():
             experiment_results.append(exp_result)
 
             if result.returncode == 0:
-                print(f"  ✓ Experiment completed successfully")
+                print(f"  [OK] Experiment completed successfully")
             else:
-                print(f"  ✗ Experiment failed with return code {result.returncode}")
+                print(f"  [FAIL] Experiment failed with return code {result.returncode}")
                 print(f"    See logs in: {exp_dir}")
 
         except Exception as e:
-            print(f"  ✗ Error running experiment: {e}")
+            print(f"  [ERROR] Error running experiment: {e}")
             experiment_results.append({
                 "experiment_name": exp_name,
                 "parameters": exp_params,

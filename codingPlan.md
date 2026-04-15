@@ -27,14 +27,14 @@
     + 编码修改：染色体需编码离散权重 $  w_i  $、二元卸载 $  \mu_i  $、连续SEF $  \beta_i  $、计算资源 $  f_{mec}^i  $，并在适应度函数中调用新DW-DNA归一化+量子化逻辑。
     + 集成改进SEF计算开销公式(2)和全局自适应惩罚。
     + 补充迭代次数、种群大小、运行时间对比（用于和DRL方法对比复杂度）。
-- [ ] IPPO
+- [x] IPPO
     + 保留为“不使用DW-DNA + 传统等分带宽”的消融版本，用于对比SA-IPPO的提升。
     + 或统一使用DW-DNA但关闭语义感知模块（β固定为1），作为“无语义提取”的纯IPPO。
 - [ ] SA-IPPO
     + 明确标注为“Proposed”：使用DW-DNA + 改进SEF模型（公式(2) $  N_i^e = \alpha (D_i^o)^\eta (\frac{1}{\beta_i^k} - 1)  $），强调“资源解耦（环境处理归一化）+ 按需分配（权重代表需求强度）”。
     + 仿真中必须使用新带宽机制，突出“向下取整模拟5G RB不可分割特性”和“量化损失”的落地价值。
     + 正文中增加结构图/小表格对比SA-IPPO与其他算法（critic更新方式、状态来源、通信开销）（修改思路点2）。
-- [ ] SA-MAPPO
+- [x] SA-MAPPO
     + 必须适配DW-DNA（同SA-IPPO），否则对比不公平。
     + 用于体现“MAPPO因共享critic/参数在规模增大时收敛变差、可扩展性差”（回应[23]和Reviewer点4），同时对比IPPO的独立学习优势。
 - [x] Greedy
@@ -50,7 +50,7 @@
 
 
 ## 3. 增加算法
-+ MADDPG（或SA-MADDPG）：Reviewer明确要求说明为什么不用MAPPO/MADDPG/TD3等（可扩展性、部分可观测性、通信开销问题）。增加此算法可直接在正文/表格中对比IPPO的优势（无全局critic、无参数共享、更低通信开销、更适合大规模IoT）。建议同时做SA版本以公平对比语义感知能力。
-+ MA-TD3（Multi-Agent TD3）：相关工作[17][18]中已使用，可直接引用作为强基准，突出IPPO在连续/离散混合动作空间下的稳定性和收敛性（TD3对超参数敏感、训练不稳）。
-+ Lyapunov-guided DRL（或[22]中的Lyapunov + block coordinate descent方法）：Reviewer 2 和修改思路中多次提到[22]，增加此传统优化基准可体现DRL的实时性和动态适应性优势（尤其在用户规模增大时的运行时间对比）。若实现难度大，可简化为“Lyapunov-based baseline”并引用其结果做定性/定量对比。
-+ 可选：Centralized PPO（或Single-Agent PPO）：作为“集中式 vs 分布式”的直接对比，进一步说明IPPO分布式决策在可扩展性和IoT资源受限场景下的优势（Reviewer点2和4）。
+- [ ] MADDPG（或SA-MADDPG）：Reviewer明确要求说明为什么不用MAPPO/MADDPG/TD3等（可扩展性、部分可观测性、通信开销问题）。增加此算法可直接在正文/表格中对比IPPO的优势（无全局critic、无参数共享、更低通信开销、更适合大规模IoT）。建议同时做SA版本以公平对比语义感知能力。
+- [ ] MA-TD3（Multi-Agent TD3）：相关工作[17][18]中已使用，可直接引用作为强基准，突出IPPO在连续/离散混合动作空间下的稳定性和收敛性（TD3对超参数敏感、训练不稳）。
+- [ ] Lyapunov-guided DRL（或[22]中的Lyapunov + block coordinate descent方法）：Reviewer 2 和修改思路中多次提到[22]，增加此传统优化基准可体现DRL的实时性和动态适应性优势（尤其在用户规模增大时的运行时间对比）。若实现难度大，可简化为“Lyapunov-based baseline”并引用其结果做定性/定量对比。
+- [ ] 可选：Centralized PPO（或Single-Agent PPO）：作为“集中式 vs 分布式”的直接对比，进一步说明IPPO分布式决策在可扩展性和IoT资源受限场景下的优势（Reviewer点2和4）。

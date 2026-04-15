@@ -4,7 +4,7 @@ Semantic‑Aware Independent Proximal Policy Optimization (SA‑IPPO) with Discr
 
 ## 项目简介
 
-本项目在原有 SA‑IPPO 算法基础上，完成了以下核心修改：
+本项目在原有 IPPO 算法基础上，完成了以下核心修改：
 
 1. **动作空间扩展**：从原来的三维 `[卸载, 语义因子, MEC资源]` 扩展为四维 `[卸载, 语义因子, MEC资源, 带宽权重]`，删除了原有的传输功率维度。
 2. **带宽分配机制**：采用 DW‑DNA (Discrete Weight‑based Dynamic Normalized Allocation) 机制，替代原有的静态均分带宽。智能体输出离散的带宽权重 `bw_weight ∈ {0,1,2,3}`，环境层通过全局归一化与向下取整量化，实现按需、离散的带宽分配。
