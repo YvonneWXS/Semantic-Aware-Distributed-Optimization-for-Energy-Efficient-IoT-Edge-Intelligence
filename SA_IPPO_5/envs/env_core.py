@@ -4,6 +4,9 @@ import math
 class EnvCore(object):
     """
     # 环境中的智能体
+
+    注意：传输功率现在是固定参数 (self.transmission_power = 0.05W)，
+    不再从动作空间中获取。这是为了简化问题，专注于其他决策变量。
     """
 
     def __init__(self):
@@ -11,8 +14,8 @@ class EnvCore(object):
         self.agent_num = 10 # TODO 设置智能体的个数
         self.obs_dim = 3  # 设置智能体的观测维度 ：task_size, computing_density, max_delay
 
-        # 动作维度：卸载(1) + 语义(1) + 资源(1) + 功率(1) = 4个离散头
-        self.action_dim = 4  # 设置智能体的动作维度：offload_decision, semantic_factor, resource_allocation, transmission_power
+        # 动作维度：卸载(1) + 语义(1) + 资源(1) + 带宽权重(1) = 4个离散头
+        self.action_dim = 4  # 设置智能体的动作维度：offload_decision, semantic_factor, resource_allocation, bandwidth_weight
         self.k = 100
 
         # 基本参数
@@ -38,11 +41,13 @@ class EnvCore(object):
         self.beta =2 #运行语义提取任务的CPU周期数的参数3
         self.transmission_bandwidth = 1 * self.mHz   # 传输带宽1MHz
         # self.W = self.transmission_bandwidth/self.agent_num  #每个用户设备的带宽分配
-        # self.transmission_power = np.random.uniform(0.02, 0.1)  # 传输功率0.02W-0.1W
         self.noise_power = 10**(-20) # 噪声功率-170dBm
         #不考虑邻道干扰功率
         self.MEC_f = 20 * self.GHz  # MEC的计算能力
         # self.weight_factor = 0.7  # 能耗和公平性的权重
+
+        # 传输功率参数 - 固定值，不再从动作空间中获取
+        self.transmission_power = 0.05  # 固定传输功率 0.05W
 
 
         #随机生成每个UE的计算能力等参数
@@ -66,6 +71,9 @@ class EnvCore(object):
         self.computing_density = np.zeros(self.agent_num)
         self.local_delay = np.zeros(self.agent_num)
         self.max_delay = np.zeros(self.agent_num)
+
+        # 带宽权重数组，用于存储每个智能体的带宽需求强度
+        self.bandwidth_weights = np.zeros(self.agent_num)
         
         self.cur_agent_obs = []
         self.sub_agent_obs = []
@@ -73,12 +81,13 @@ class EnvCore(object):
 
     def reset(self): # 重置初始环境
         np.random.seed(1)
-        self.sub_agent_obs = [] 
+        self.sub_agent_obs = []
         for i in range(self.agent_num):
             self.task_size[i] = np.random.randint(1.5 * self.MB, 2 * self.MB)  # 任务大小
             self.computing_density[i] = np.random.uniform(300, 500)  # 处理任务每比特数据的成本
             self.local_delay[i] = self.task_size[i] * self.computing_density[i] / self.local_comp[i]  # 本地处理任务时间
             self.max_delay[i] = np.random.uniform(self.local_delay[i], 2 * self.local_delay[i])  # 任务最大容忍时间随机取
+            self.bandwidth_weights[i] = 0  # 初始化带宽权重为0
             observation = np.array([self.task_size[i], self.computing_density[i], self.max_delay[i]])
             self.sub_agent_obs.append(observation)
         return self.sub_agent_obs
@@ -86,7 +95,7 @@ class EnvCore(object):
     def step(self, actions, episode, step):
         """
         动作输入 actions 为 one-hot 拼接向量。
-        假设总维度 25 = 2(卸载) + 8(语义) + 10(资源) + 5(功率)
+        假设总维度 24 = 2(卸载) + 8(语义) + 10(资源) + 4(带宽权重)
 
         用离散动作空间one-hot编码值计算reward
         """
@@ -140,10 +149,14 @@ class EnvCore(object):
             # semantic_factor = (np.argmax(action[2:10])+1)*0.1 + 0.3 # 语义因子   #🌟
             semantic_factor = np.argmax(action[2:10]) * 0.1 + 0.3
 
-            # 4. 发射功率 (Indices 20-25, 5个值)
-            # 范围 [0.02, 0.1]. Index 0 -> 0.02, Index 4 -> 0.1
-            power_idx = np.argmax(action[20:])  # 50个
-            transmission_power = 0.02 + power_idx * 0.02
+            # 4. 带宽权重 (Indices 20-24, 4个值)
+            # 范围 {0,1,2,3}. Index 0 -> 0, Index 1 -> 1, Index 2 -> 2, Index 3 -> 3
+            bandwidth_weight_idx = np.argmax(action[20:24])  # 4个one-hot位置
+            bandwidth_weight = bandwidth_weight_idx  # 直接映射到0,1,2,3
+            # 如果卸载决策为0，则带宽权重强制为0
+            if offload_decision == 0:
+                bandwidth_weight = 0
+            self.bandwidth_weights[i] = bandwidth_weight  # 存储带宽权重
 
             resource_allocation= resource_allocation_space[i]
 
@@ -155,7 +168,6 @@ class EnvCore(object):
             if offload_decision == 0:#本地处理
                 RL_total_energy = RL_local_energy
                 RL_total_delay = self.local_delay[i]
-                transmission_power = 0 
             else:
                 # 卸载执行
                 # 1. 语义提取能耗 (Local)
@@ -163,14 +175,15 @@ class EnvCore(object):
                 # 代码对应: eta -> r, k -> beta
                 RL_SEtask_energy = self.κ * self.alpha * ( self.task_size[i] ** self.r) * ((semantic_factor ** (-self.beta) - 1)) * (self.local_comp[i]**2)
 
-                # 2. 传输速率 (Eq. 4) 
-                uplink_rate = W * math.log2 (1 + transmission_power * self.channel_gain[i] / (W * self.noise_power))
-                
-                # 3. 传输能耗 (Eq. 5) 
+                # 2. 传输速率 (Eq. 4)
+                # 使用固定传输功率 self.transmission_power 进行计算
+                uplink_rate = W * math.log2 (1 + self.transmission_power * self.channel_gain[i] / (W * self.noise_power))
+
+                # 3. 传输能耗 (Eq. 5)
                 # 数据量 = task_size * semantic_factor
-                upload_energy = transmission_power *  self.task_size[i] *semantic_factor / uplink_rate
+                upload_energy = self.transmission_power *  self.task_size[i] *semantic_factor / uplink_rate
                 # mec_energy = self.κ_mec *(resource_allocation**3) * semantic_factor *  self.task_size[i] * self.computing_density[i]/(resource_allocation)
-                
+
                 # 总能耗
                 RL_total_energy = RL_SEtask_energy + upload_energy # + mec_energy
 

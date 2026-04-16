@@ -50,7 +50,12 @@
       "Bash(pkill -f \"python main.py --batch\")",
       "Bash(find results:*)",
       "Bash(python train/train.py --experiment_name=test_15ue --num_agents=15 --data_size=128 --bandwidth=750 --mec_capacity=10.0 --min_semantic_factor=0.2 --algorithm_name=mappo --seed=1 --cuda --n_rollout_threads=1 --num_env_steps=100 --use_eval --share_policy False)",
-      "Bash(wmic process:*)"
+      "Bash(wmic process:*)",
+      "Bash(python -c \"import env_discrete; print\\('env_discrete.py imports successfully'\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, '.'\\); from envs.env_discrete import DiscreteActionEnv; print\\('DiscreteActionEnv imported successfully'\\)\")",
+      "Bash(find . -name \"*.py\" -type f -exec grep -l \"transmission_power.*0.1.*0.5\" {} \\\\;)",
+      "Read(//d/3_document/4_research/semantic_2/Semantic-Aware-Dptimization-for-Energy-Efficient-IoT-Edge-Intelligence/IPPO/envs/**)",
+      "Bash(python test_fixes.py)"
     ]
   }
 }
