@@ -55,7 +55,11 @@
       "Bash(python -c \"import sys; sys.path.insert\\(0, '.'\\); from envs.env_discrete import DiscreteActionEnv; print\\('DiscreteActionEnv imported successfully'\\)\")",
       "Bash(find . -name \"*.py\" -type f -exec grep -l \"transmission_power.*0.1.*0.5\" {} \\\\;)",
       "Read(//d/3_document/4_research/semantic_2/Semantic-Aware-Dptimization-for-Energy-Efficient-IoT-Edge-Intelligence/IPPO/envs/**)",
-      "Bash(python test_fixes.py)"
+      "Bash(python test_fixes.py)",
+      "Bash(python -c \"import config; print\\('配置文件导入成功'\\)\")",
+      "Bash(python config.py)",
+      "Bash(python test_batch_config.py)",
+      "Bash(python test_main.py)"
     ]
   }
 }

@@ -5,8 +5,6 @@
 1. 传统的IPPO算法参数配置（通过get_config()函数）
 2. 批量实验参数配置（通过BatchExperimentConfig类）
 
-作者：无线通信与边缘计算算法工程师
-日期：2026/04/15
 """
 
 import argparse
