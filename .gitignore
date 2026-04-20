@@ -51,12 +51,15 @@ Thumbs.db
 # Logs
 *.log
 logs/
+events.out.tfevents.*
+*.tfevents.*
 
 # Data files
 *.csv
 *.pkl
 *.h5
 *.hdf5
+*.pdf
 
 # Checkpoints and models
 checkpoints/
