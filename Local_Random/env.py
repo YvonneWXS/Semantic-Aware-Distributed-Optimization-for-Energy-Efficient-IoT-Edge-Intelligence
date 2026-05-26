@@ -5,7 +5,7 @@ import numpy as np
 
 class ENV():
     def __init__(self, UEs, MECs, k, lam):
-        np.random.seed(47)
+        # np.random.seed(47)
         self.UEs = UEs
         self.MECs = MECs
         self.k = k  # 表示离散化参数
